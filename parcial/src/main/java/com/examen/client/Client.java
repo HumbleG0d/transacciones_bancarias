@@ -43,12 +43,27 @@ public class Client implements Runnable {
 
       //Hilo principal para enviar mensajes
       while (true) {
-        System.out.println("Opciones: 1 para transferencia (origen:destino:monto)");
+        System.out.println("""
+                OPCIÓN 1 -> LECTURA DE CUENTA SALDO
+                OPCIÓN 2 -> TRANSFERENCIA DE CUENTA SALDO
+                """);
+        System.out.print("OPCIÓN: ");
         String userInput = sc.nextLine();
+
         if (userInput.startsWith("1")) {
-          out.println("OPcion:1:" + userInput.substring(1).trim()); // Ejemplo: "OPcion:1:101:102:500.00"
+          System.out.print("CUENTA SALDO: ");
+          String id_count = sc.nextLine();
+          out.println("1-" + id_count);
+        } else if (userInput.startsWith("2")) {
+          System.out.print("CUENTA SALDO ORIGEN: ");
+          String id_count = sc.nextLine();
+          System.out.print("CUENTA SALDO DESTINO: ");
+          String id_count_destino = sc.nextLine();
+          System.out.print("MONTO: ");
+          String monto = sc.nextLine();
+          out.println("2-" + id_count + ":" + id_count_destino + ":" + monto);
         } else {
-          out.println("Cliente " + name + ": " + userInput);
+          System.out.println("Opción no válida. Intente nuevamente.");
         }
       }
 
@@ -61,5 +76,4 @@ public class Client implements Runnable {
     Client client = new Client("Sideral");
     new Thread(client).start();
   }
-
 }

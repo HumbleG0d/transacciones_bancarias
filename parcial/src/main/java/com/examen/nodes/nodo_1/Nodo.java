@@ -1,13 +1,10 @@
 package com.examen.nodes;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Nodo_1 implements Runnable {
+public class Nodo implements Runnable {
 
   private final String nodeId;
   private final int portNode;
@@ -17,11 +14,13 @@ public class Nodo_1 implements Runnable {
   private Socket socket; //socker para conectarce con el sevidor principal
   private BufferedReader inFromServer; //Para enviar mensajes del servidor
   private PrintWriter outToServer; //Para recibir mensajes del servidor
+  private String root_directory;
+  private String[] table_counts = {"cu_1.txt" , "cu_2.txt" , "cu_3.txt"};
 
-
-  public Nodo_1(String nodeId, int portNode) {
+  public Nodo(String nodeId, int portNode , String root_directory) {
     this.nodeId = nodeId;
     this.portNode = portNode;
+    this.root_directory = root_directory;
   }
 
 
@@ -64,13 +63,13 @@ public class Nodo_1 implements Runnable {
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(taskSocket.getInputStream()));
          PrintWriter writer = new PrintWriter(taskSocket.getOutputStream(), true)) {
 
-      String message = reader.readLine();
-      System.out.println("Nodo " + nodeId + " recibio tarea:  " + message);
+      String option = reader.readLine();
+//      System.out.println("Nodo " + nodeId + " recibio tarea:  " + message);
 
-
-      if(message.startsWith("OPcion:1")){
-      //Simular tarea
-      String result = processTask(message);
+      if (option.startsWith("1")) {
+        //Simular tarea
+        String id_count = option.split("-")[1];
+        String result = checkBalance(id_count);
         writer.println("RESULTADO " + nodeId + " -> " + result);
       }
 
@@ -79,13 +78,31 @@ public class Nodo_1 implements Runnable {
     }
   }
 
-  //Simular procesamiento de una tarea
-  private String processTask(String message) {
-    return "GAAAA";
-  }
+  private String checkBalance(String idClient) {
+    int x = 0;
+    while (x < table_counts.length) {
+      try {
+        File file = new File(root_directory + table_counts[x]);
+        BufferedReader br = new BufferedReader(new FileReader(file));
+        String line;
+        br.readLine();
+        br.readLine();
 
-  public static void main(String[] args) {
-    new Thread(new Nodo_1("nodo_1", 6000)).start();
-  }
+        while ((line = br.readLine()) != null) {
+          String[] tokens = line.split("\\|");
 
+          String id_count = tokens[0].trim();
+          outToServer.println(tokens[0]);
+          if (id_count.equals(idClient)) {
+            br.close();
+            return "SALDO: " + tokens[2];
+          }
+        }
+      } catch (IOException e) {
+        return "Error al leer el nodo " + nodeId + ": " + e.getMessage();
+      }
+      x++;
+    }
+    return "CUENTA NO ENCONTRADA";
+  }
 }
