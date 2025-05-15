@@ -12,24 +12,19 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server implements Runnable {
   private ServerSocket serverSocket;
   private Socket clientSocket;
   private final int PUERTO = 5000;
   private static List<PrintWriter> clientesWriter = new ArrayList<>();
-
-  // Mapa de nodos: nodoId -> {ip, puerto, writer}
   private static Map<String, NodeInfo> nodosDisponibles = new ConcurrentHashMap<>();
-
-  // Contador de tareas activas por nodo
   private static Map<String, AtomicInteger> cargaNodos = new ConcurrentHashMap<>();
-
-  // Contadores para Round Robin
   private static volatile int roundRobinIndex = 0;
   private static List<String> nodosOrdenados = new ArrayList<>();
+  private static Map<String, List<String>> replicacionMap = new ConcurrentHashMap<>();
 
   @Override
   public void run() {
@@ -55,32 +50,42 @@ public class Server implements Runnable {
         System.out.println("Mensaje recibido: " + message);
 
         if (message.startsWith("REGISTRO_NODO")) {
-          // Registro de un nodo: REGISTRO_NODO:nodo_1:6000
           String[] parts = message.split(":");
+          if (parts.length < 4) {
+            System.err.println("Formato inválido para REGISTRO_NODO: " + message);
+            continue;
+          }
           String nodeId = parts[1];
-          int portNode = Integer.parseInt(parts[1]); // Corregido: era parts[1]
-
-          NodeInfo nodeInfo = new NodeInfo("127.0.0.1", portNode, writer);
+          String nodeIp = parts[2]; // Nueva IP del nodo
+          int portNode = Integer.parseInt(parts[3]);
+          NodeInfo nodeInfo = new NodeInfo(nodeIp, portNode, writer); // Usar la IP del nodo
           nodosDisponibles.put(nodeId, nodeInfo);
           cargaNodos.put(nodeId, new AtomicInteger(0));
 
-          // Actualizar lista ordenada para Round Robin
+          if (parts.length > 4) {
+            String[] tablas = parts[3].split(",");
+            synchronized (replicacionMap) {
+              for (String tabla : tablas) {
+                replicacionMap.computeIfAbsent(tabla, k -> new ArrayList<>()).add(nodeId);
+              }
+            }
+          }
+
           synchronized (nodosOrdenados) {
             if (!nodosOrdenados.contains(nodeId)) {
               nodosOrdenados.add(nodeId);
             }
           }
 
-          System.out.println("Nodo registrado: " + nodeId + " en puerto " + portNode);
+          System.out.println("Nodo registrado: " + nodeId + " en puerto " + portNode + " con tablas: " + (parts.length > 3 ? parts[3] : "ninguna"));
         } else if (message.startsWith("HEARTBEAT:")) {
-          // Heartbeat: HEARTBEAT:nodo_1
           String nodeId = message.split(":")[1];
           System.out.println("Heartbeat recibido de " + nodeId);
         } else if (message.startsWith("RESULTADO")) {
-          // Resultado procesado por un nodo
           handleNodeResult(message);
+        } else if (message.startsWith("UPDATE:")) {
+          propagarActualizacion(message);
         } else {
-          // Mensaje de un cliente, enviarlo a un nodo
           clientesWriter.add(writer);
           enviarTareaANodo(message);
         }
@@ -93,20 +98,37 @@ public class Server implements Runnable {
   }
 
   private static void handleNodeResult(String message) {
-    // Extraer nodeId del resultado
     String[] parts = message.split(" -> ");
     if (parts.length >= 2) {
-      String nodeId = parts[0].split(" ")[1]; // RESULTADO nodo_1 -> ...
-
-      // Decrementar carga del nodo
+      String nodeId = parts[0].split(" ")[1];
       AtomicInteger carga = cargaNodos.get(nodeId);
       if (carga != null) {
         carga.decrementAndGet();
       }
-
-      // Enviar resultado a clientes
       String resultado = parts[1];
       broadCast("Resultado: " + resultado);
+    }
+  }
+
+  private static void propagarActualizacion(String updateMessage) {
+    String[] parts = updateMessage.split(":", 4);
+    if (parts.length < 4) return;
+
+    String origenNodeId = parts[1];
+    String tabla = parts[2];
+    String contenido = parts[3];
+
+    List<String> nodosReplicados = replicacionMap.getOrDefault(tabla, new ArrayList<>());
+    for (String nodoId : nodosReplicados) {
+      if (!nodoId.equals(origenNodeId)) {
+        NodeInfo node = nodosDisponibles.get(nodoId);
+        if (node != null) {
+          PrintWriter outToNode = node.getWriter();
+          outToNode.println("UPDATE:" + origenNodeId + ":" + tabla + ":" + contenido);
+          outToNode.flush();
+          System.out.println("Actualización enviada a " + nodoId + " para tabla " + tabla);
+        }
+      }
     }
   }
 
@@ -123,21 +145,16 @@ public class Server implements Runnable {
     }
 
     NodeInfo node = nodosDisponibles.get(nodeId);
-
-    // Incrementar carga del nodo seleccionado
     cargaNodos.get(nodeId).incrementAndGet();
 
-    // Procesar tarea de forma asíncrona para no bloquear el servidor
     new Thread(() -> {
       try (Socket nodoSocket = new Socket(node.getIp(), node.getPort());
            PrintWriter outToNode = new PrintWriter(nodoSocket.getOutputStream(), true);
            BufferedReader inFromNode = new BufferedReader(new InputStreamReader(nodoSocket.getInputStream()))) {
 
-        // Enviar la tarea al nodo
         outToNode.println(mensaje);
         System.out.println("Tarea enviada a " + nodeId + ": " + mensaje);
 
-        // Esperar el resultado del nodo
         String result = inFromNode.readLine();
         if (result != null) {
           System.out.println("Resultado del nodo " + nodeId + ": " + result);
@@ -146,9 +163,7 @@ public class Server implements Runnable {
 
       } catch (IOException e) {
         System.err.println("Error al comunicarse con nodo " + nodeId + ": " + e.getMessage());
-        // Decrementar carga en caso de error
         cargaNodos.get(nodeId).decrementAndGet();
-        // Eliminar nodo si falla consistentemente
         nodosDisponibles.remove(nodeId);
         synchronized (nodosOrdenados) {
           nodosOrdenados.remove(nodeId);
@@ -158,16 +173,11 @@ public class Server implements Runnable {
     }).start();
   }
 
-  /**
-   * Selecciona un nodo usando balanceo por carga
-   * Si todos tienen la misma carga, usa Round Robin
-   */
   private static String seleccionarNodo() {
     if (nodosDisponibles.isEmpty()) {
       return null;
     }
 
-    // Encontrar el nodo con menor carga
     String nodoMenorCarga = null;
     int menorCarga = Integer.MAX_VALUE;
 
@@ -181,7 +191,6 @@ public class Server implements Runnable {
       }
     }
 
-    // Si no hay un claro ganador (misma carga), usar Round Robin
     if (nodoMenorCarga == null || menorCarga == getCargaPromedio()) {
       synchronized (nodosOrdenados) {
         if (!nodosOrdenados.isEmpty()) {
@@ -212,7 +221,6 @@ public class Server implements Runnable {
     }
   }
 
-  // Método para mostrar estadísticas de carga (útil para debugging)
   public static void mostrarEstadisticas() {
     System.out.println("\n=== Estadísticas de Carga de Nodos ===");
     for (Map.Entry<String, AtomicInteger> entry : cargaNodos.entrySet()) {
@@ -224,7 +232,6 @@ public class Server implements Runnable {
   public static void main(String[] args) {
     new Thread(new Server()).start();
 
-    // Opcional: Thread para mostrar estadísticas cada 5 segundos
     new Thread(() -> {
       while (true) {
         try {

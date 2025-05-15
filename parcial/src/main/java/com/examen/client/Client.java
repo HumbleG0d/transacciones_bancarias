@@ -1,79 +1,79 @@
 package com.examen.client;
 
+import com.examen.test.TransactionDataGenerator;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Scanner;
 
 public class Client implements Runnable {
-  private String name;
+  private final String name;
   private final int PORT = 5000;
   private final String HOST = "127.0.0.1";
+  private static final int TRANSACTIONS_PER_CLIENT = 334; // Total 1002 transacciones (3 clientes)
+  private static final long DELAY_BETWEEN_TRANSACTIONS_MS = 100; // 10 transacciones por segundo
 
   public Client(String name) {
     this.name = name;
   }
 
-
   @Override
   public void run() {
-    try(
-            //Estableciendo conexion con el servidor
-            Socket clientSocket = new Socket(HOST , PORT);
-            //Para enviar mensajes al servidor
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream() , true);
-            //Para recibir mensaje del servidor
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-    ){
-      Scanner sc = new Scanner(System.in);
-
-      //Hilo para recibir mensaje
-      new Thread(() ->{
-        try{
+    try (
+            // Estableciendo conexión con el servidor
+            Socket clientSocket = new Socket(HOST, PORT);
+            // Para enviar mensajes al servidor
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+            // Para recibir mensajes del servidor
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))
+    ) {
+      // Hilo para recibir mensajes del servidor
+      new Thread(() -> {
+        try {
           String serverMessage;
-          while((serverMessage = in.readLine()) != null){
-            System.out.println(serverMessage);
+          while ((serverMessage = in.readLine()) != null) {
+            System.out.println(name + " recibió: " + serverMessage);
           }
-        }catch (IOException e){
-          System.err.println("Desconectado del servidor");
+        } catch (IOException e) {
+          System.err.println(name + " desconectado del servidor: " + e.getMessage());
         }
       }).start();
 
-      //Hilo principal para enviar mensajes
-      while (true) {
-        System.out.println("""
-                OPCIÓN 1 -> LECTURA DE CUENTA SALDO
-                OPCIÓN 2 -> TRANSFERENCIA DE CUENTA SALDO
-                """);
-        System.out.print("OPCIÓN: ");
-        String userInput = sc.nextLine();
+      // Generar y enviar transacciones automáticamente
+      for (int i = 0; i < TRANSACTIONS_PER_CLIENT; i++) {
+        TransactionDataGenerator.Transaction transaction = TransactionDataGenerator.generateTransaction();
+        String idCount = transaction.getIdCount();
+        String idCountDestino = transaction.getIdCountDestino();
+        String monto = String.format("%.2f", transaction.getMonto());
+        out.println("2-" + idCount + ":" + idCountDestino + ":" + monto);
+        System.out.println(name + " envió transacción #" + (i + 1) + ": " + idCount + " -> " + idCountDestino + " por " + monto);
 
-        if (userInput.startsWith("1")) {
-          System.out.print("CUENTA SALDO: ");
-          String id_count = sc.nextLine();
-          out.println("1-" + id_count);
-        } else if (userInput.startsWith("2")) {
-          System.out.print("CUENTA SALDO ORIGEN: ");
-          String id_count = sc.nextLine();
-          System.out.print("CUENTA SALDO DESTINO: ");
-          String id_count_destino = sc.nextLine();
-          System.out.print("MONTO: ");
-          String monto = sc.nextLine();
-          out.println("2-" + id_count + ":" + id_count_destino + ":" + monto);
-        } else {
-          System.out.println("Opción no válida. Intente nuevamente.");
+        // Esperar para mantener ~10 transacciones por segundo
+        try {
+          Thread.sleep(DELAY_BETWEEN_TRANSACTIONS_MS);
+        } catch (InterruptedException e) {
+          System.err.println(name + " interrumpido durante espera: " + e.getMessage());
         }
       }
 
-    }catch (IOException e){
-      System.err.println("Error en el cliente: " + e.getMessage());
+      System.out.println(name + " completó todas las transacciones.");
+
+    } catch (IOException e) {
+      System.err.println("Error en el cliente " + name + ": " + e.getMessage());
     }
   }
 
   public static void main(String[] args) {
-    Client client = new Client("Sideral");
-    new Thread(client).start();
+    // Crear 3 clientes
+    Client client1 = new Client("Cliente1");
+    Client client2 = new Client("Cliente2");
+    Client client3 = new Client("Cliente3");
+
+    // Iniciar cada cliente en un hilo separado
+    new Thread(client1).start();
+    new Thread(client2).start();
+    new Thread(client3).start();
   }
 }

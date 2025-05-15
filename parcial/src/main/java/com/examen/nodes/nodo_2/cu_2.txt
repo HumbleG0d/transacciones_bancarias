@@ -1,8 +1,8 @@
 ID_CUENTA | ID_CLIENTE |     SALDO     | TIPO_CUENTA
 -----------------------------------------------------
 201       |     51     |   3,218.50    | Ahorro
-202       |     52     |   6,405.75    | Corriente
-203       |     53     |   1,204.00    | Ahorro
+202 | 52 | 5140.23 | Corriente
+203 | 53 | 393.07 | Ahorro
 204       |     54     |   9,814.90    | Ahorro
 205       |     55     |   2,365.20    | Corriente
 206       |     56     |   4,591.80    | Ahorro
@@ -22,7 +22,7 @@ ID_CUENTA | ID_CLIENTE |     SALDO     | TIPO_CUENTA
 220       |     70     |   2,980.00    | Ahorro
 221       |     71     |   4,812.60    | Corriente
 222       |     72     |   1,605.40    | Ahorro
-223       |     73     |   7,290.35    | Corriente
+223 | 73 | 7962.47 | Corriente
 224       |     74     |   3,193.00    | Ahorro
 225       |     75     |   9,745.00    | Ahorro
 226       |     76     |   5,607.80    | Corriente
@@ -43,7 +43,7 @@ ID_CUENTA | ID_CLIENTE |     SALDO     | TIPO_CUENTA
 241       |     91     |   2,158.00    | Ahorro
 242       |     92     |   6,712.60    | Corriente
 243       |     93     |   1,893.10    | Ahorro
-244       |     94     |   8,322.40    | Corriente
+244 | 94 | 8314.96 | Corriente
 245       |     95     |   5,212.00    | Ahorro
 246       |     96     |   9,081.85    | Corriente
 247       |     97     |   3,031.75    | Ahorro

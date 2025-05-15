@@ -1,4 +1,4 @@
-package com.examen.nodes.nodo_1;
+package com.examen.nodes.nodo_2;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -414,7 +414,7 @@ public class Nodo implements Runnable {
   }
 
   public static void main(String[] args) {
-    String root_directory = "C:\\Users\\sergi\\transacciones_bancarias\\parcial\\src\\main\\java\\com\\examen\\nodes\\nodo_1\\";
-    new Thread(new Nodo("nodo_1", 6001, root_directory)).start();
+    String root_directory = "C:\\Users\\sergi\\transacciones_bancarias\\parcial\\src\\main\\java\\com\\examen\\nodes\\nodo_2\\";
+    new Thread(new Nodo("nodo_2", 6002, root_directory)).start();
   }
 }
