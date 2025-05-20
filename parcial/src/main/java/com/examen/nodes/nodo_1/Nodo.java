@@ -9,12 +9,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.net.InetAddress;
+import java.time.DateTimeFormatter;
 
 public class Nodo implements Runnable {
 
   private final String nodeId;
   private final int portNode;
-  private final String serverHost = "192.168.68.181";
+  private final String serverHost = " ";
   private final int serverPort = 5000;
   private ServerSocket server;
   private Socket socket;
@@ -92,7 +93,7 @@ public class Nodo implements Runnable {
     String tablasReplicadas = String.join(",", table_counts);
     String ip = InetAddress.getLocalHost().getHostAddress(); // Obtener la IP del nodo
     outToServer.println("REGISTRO_NODO:" + nodeId + ":" + ip + ":" + portNode + ":" + tablasReplicadas);
-    System.out.println("Nodo " + nodeId + " registrado en el servidor con IP " + ip + " y tablas: " + tablasReplicadas + " a las " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
+    System.out.println("Nodo " + nodeId + " registrado en el servidor con IP " + ip + " y tablas: " + tablasReplicadas + " a las " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
   }
 
   private void handleTasks() {
@@ -416,7 +417,8 @@ public class Nodo implements Runnable {
   }
 
   public static void main(String[] args) {
-    String root_directory = "/home/centos/nodes/node_1";
-    new Thread(new Nodo("nodo_1", 7000, root_directory)).start();
+    String root_directory = " "; //Ruta donde se encuentran los archivos
+    int port =  //Puerto del nodo
+    new Thread(new Nodo("nodo_1", port , root_directory)).start();
   }
 }
