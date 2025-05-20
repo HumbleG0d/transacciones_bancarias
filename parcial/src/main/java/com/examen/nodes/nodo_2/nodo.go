@@ -30,7 +30,7 @@ func NewNodo(nodeId string, portNode int, rootDirectory string) *Nodo {
 	n := &Nodo{
 		nodeId:        nodeId,
 		portNode:      portNode,
-		serverHost:    "192.168.68.181",
+		serverHost:    " ", //Colocar la IP del servidor
 		serverPort:    5000,
 		rootDirectory: rootDirectory,
 		tableCounts:   []string{"cu_1.txt", "cu_2.txt", "cu_3.txt"},
@@ -127,7 +127,7 @@ func (n *Nodo) registerNode() error {
 func getLocalIP() string {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		return "127.0.0.1"
+		return " ERROR INTERFACE ADDRES"
 	}
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
@@ -493,8 +493,8 @@ func (n *Nodo) aplicarActualizacion(tabla, contenido string) {
 }
 
 func main() {
-	rootDirectory := "/home/centos/nodes/node_2"
-	n := NewNodo("nodo_2", 7001, rootDirectory)
+	rootDirectory := " " //Colocoar la ruta de los archivos 
+	n := NewNodo("nodo_2",  , rootDirectory) //Colocar puerto para el nodo 
 	go n.Run()
 	time.Sleep(time.Hour * 24) // Mantener el programa vivo (ajustar según necesidad)
 }
