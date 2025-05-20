@@ -1,19 +1,20 @@
-package com.examen.nodes.nodo_1;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.net.InetAddress;
 
 public class Nodo implements Runnable {
 
   private final String nodeId;
   private final int portNode;
-  private final String serverHost = "127.0.0.1";
+  private final String serverHost = "192.168.68.181";
   private final int serverPort = 5000;
   private ServerSocket server;
   private Socket socket;
@@ -87,10 +88,11 @@ public class Nodo implements Runnable {
     inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
   }
 
-  private void registerNode() {
+  private void registerNode() throws UnknownHostException {
     String tablasReplicadas = String.join(",", table_counts);
-    outToServer.println("REGISTRO_NODO:" + nodeId + ":" + portNode + ":" + tablasReplicadas);
-    System.out.println("Nodo " + nodeId + " registrado en el servidor con tablas: " + tablasReplicadas + " a las " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
+    String ip = InetAddress.getLocalHost().getHostAddress(); // Obtener la IP del nodo
+    outToServer.println("REGISTRO_NODO:" + nodeId + ":" + ip + ":" + portNode + ":" + tablasReplicadas);
+    System.out.println("Nodo " + nodeId + " registrado en el servidor con IP " + ip + " y tablas: " + tablasReplicadas + " a las " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
   }
 
   private void handleTasks() {
@@ -193,8 +195,8 @@ public class Nodo implements Runnable {
 
     String origenFile = null;
     String destinoFile = null;
-    double saldoOrigen = 0.0;
-    double saldoDestino = 0.0;
+    double saldoOrigen = 0.00;
+    double saldoDestino = 0.00;
 
     for (String fileName : table_counts) {
       try {
@@ -414,7 +416,7 @@ public class Nodo implements Runnable {
   }
 
   public static void main(String[] args) {
-    String root_directory = "C:\\Users\\sergi\\transacciones_bancarias\\parcial\\src\\main\\java\\com\\examen\\nodes\\nodo_1\\";
-    new Thread(new Nodo("nodo_1", 6001, root_directory)).start();
+    String root_directory = "/home/centos/nodes/node_1";
+    new Thread(new Nodo("nodo_1", 7000, root_directory)).start();
   }
 }

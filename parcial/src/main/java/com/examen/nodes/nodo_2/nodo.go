@@ -30,7 +30,7 @@ func NewNodo(nodeId string, portNode int, rootDirectory string) *Nodo {
 	n := &Nodo{
 		nodeId:        nodeId,
 		portNode:      portNode,
-		serverHost:    "127.0.0.1",
+		serverHost:    "192.168.68.181",
 		serverPort:    5000,
 		rootDirectory: rootDirectory,
 		tableCounts:   []string{"cu_1.txt", "cu_2.txt", "cu_3.txt"},
@@ -493,8 +493,8 @@ func (n *Nodo) aplicarActualizacion(tabla, contenido string) {
 }
 
 func main() {
-	rootDirectory := "C:\\Users\\sergi\\transacciones_bancarias\\parcial\\src\\main\\java\\com\\examen\\nodes\\nodo_1\\"
-	n := NewNodo("nodo_1", 6001, rootDirectory)
+	rootDirectory := "/home/centos/nodes/node_2"
+	n := NewNodo("nodo_2", 7001, rootDirectory)
 	go n.Run()
 	time.Sleep(time.Hour * 24) // Mantener el programa vivo (ajustar según necesidad)
 }
