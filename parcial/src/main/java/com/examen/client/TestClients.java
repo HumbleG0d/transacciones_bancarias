@@ -9,12 +9,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 //Cada cliente genere automáticamente un conjunto de transacciones financieras y
 // las envíe a un servidor a través de un socket.
-public class Client implements Runnable {//Permite que cada cliente se ejecute como un hilo
+public class TestClients implements Runnable {//Permite que cada cliente se ejecute como un hilo
   // independiente mediante new Thread(client).start().
 
   private final String name;
   private final int PORT = 5000;
-  private final String HOST = "192.168.68.181";//Se conecta a un servidor en el puerto 5000 del host 127.0.0.1
+  private final String HOST = " ";//Se conecta a un servidor en el puerto 5000 del host 127.0.0.1
   private static final int TRANSACTIONS_PER_CLIENT = 200; // Total 1002 transacciones (3 clientes)
   private static final long DELAY_BETWEEN_TRANSACTIONS_MS = 100; // 10 transacciones por segundo
 //Se ejecutan tres clientes al mismo tiempo, en hilos separados, sumando un total de 1002 transacciones.
