@@ -10,7 +10,7 @@ class Nodo
   def initialize(node_id, port_node, root_directory)
     @node_id = node_id
     @port_node = port_node
-    @server_host = 'localhost'
+    @server_host = ' ' # Colocar el IP del servidor
     @server_port = 5000
     @root_directory = root_directory.end_with?(File::SEPARATOR) ? root_directory : "#{root_directory}#{File::SEPARATOR}"
     @table_counts = ['cu_1.txt', 'cu_2.txt', 'cu_3.txt']
@@ -424,7 +424,7 @@ end
 # Punto de entrada principal
 if __FILE__ == $PROGRAM_NAME
   # Configuración del nodo - ajustar según necesidad
-  root_directory = "/tohome"
-  node = Nodo.new("nodo_ruby", 7002, root_directory)
+  root_directory = " " # Colocar la ruta de los directorios
+  node = Nodo.new("nodo_ruby",  , root_directory) # Colocar el puerto del nodo
   node.run
 end
